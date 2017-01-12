@@ -9,9 +9,7 @@ class Tictactoe:
 		self.turn = self.x
 		#empyt board
 		self.board = {1:"-", 2:"-", 3:"-", 4:"-", 5:"-", 6:"-", 7:"-", 8:"-", 9:"-"}
-		# self.board = {1:"a", 2:"b", 3:"c", 4:"d", 5:"e", 6:"f", 7:"g", 8:"h", 9:"i"}
 		
-
 
 	def getBoard(self):
 		out = ""
@@ -20,10 +18,7 @@ class Tictactoe:
 		out += "| " + self.board[4] + " | " + self.board[5] + " | " + self.board[6] + " |"
 		out += "\n" + "|---+---+---|" + "\n"
 		out += "| " + self.board[7] + " | " + self.board[8] + " | " + self.board[9] + " |"
-		if self.turn == self.x: 
-			return out + "\nturn: " + self.x
-		else: 
-			return out + "\nturn: " + self.o
+		return out
 
 
 
@@ -41,6 +36,8 @@ class Tictactoe:
 			return "o"
 
 	#move is a position: 1,2,3,..,9
+	#if move is valid, add to the board and update the turn and show board and next turn,
+	#if an user win, show board and tell that user won the game
 	def makeMove(self, player, move):
 		#check if it is player's turn
 		if player != self.turn:
@@ -56,15 +53,15 @@ class Tictactoe:
 				return self.getBoard() + "\n"+self.isGameOver()
 			# self.isGameOver()
 			self.updateTurn()
-			return self.getBoard()
+			return self.getBoard() +  "\n player's turn: "+self.turn
 
 		else:
 			return "cell isn't empty, try again"
 
 
-	#self.board = [["-", "-", "-"],["-", "-", "-"], ["-", "-", "-"]]
+
 	def isGameOver(self):
-		#check rows:
+		#check rows, columns and diagonals
 		if ((self.board[1] == self.board[2] == self.board[3] != "-") or 
 			(self.board[4] == self.board[5] == self.board[6] != "-") or 
 			(self.board[7] == self.board[8] == self.board[9] != "-") or 
