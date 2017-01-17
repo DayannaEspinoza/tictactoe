@@ -1,3 +1,5 @@
+
+
 class Tictactoe:
 
 	def __init__(self, creator, other_player):
@@ -68,7 +70,7 @@ class Tictactoe:
 			(self.board[1] == self.board[4] == self.board[7] != "-") or 
 			(self.board[2] == self.board[5] == self.board[8] != "-") or 
 			(self.board[3] == self.board[6] == self.board[9] != "-") or 
-			(self.board[1] == self.board[5] == self.board[9] != "-") or 
+			(self.board[1] == self.board[5] == self.board[9] != "-") or
 			(self.board[3] == self.board[5] == self.board[7] != "-")):
 			return "winner is "  + self.turn 
 		else: 
@@ -80,17 +82,16 @@ class Tictactoe:
 
 
 
-game = Tictactoe("me", "you")
-print "me " + game.makeMove(game.x, 1) + "\n"
-print "you " + game.makeMove(game.o, 2) +"\n"
-print "me " + game.makeMove(game.x, 4)+"\n"
-# print game.isGameOver()
-print "you " +game.makeMove(game.o, 3) +"\n"
-print "me " + game.makeMove(game.x, 7)+"\n"
-# print game.isGameOver()
-# print game.makeMove(game.o, 5)
-# print game.isGameOver()
-# print game.getBoard()
+# game = Tictactoe("me", "you")
+# print "me " + game.makeMove(game.x, 1) + "\n"
+# print "you " + game.makeMove(game.o, 2) +"\n"
+# print "me " + game.makeMove(game.x, 4)+"\n"
+# # print game.isGameOver()
+# print "you " +game.makeMove(game.o, 3) +"\n"
+# print "me " + game.makeMove(game.x, 7)+"\n"
+
+
+
 
 
 
