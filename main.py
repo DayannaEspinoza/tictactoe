@@ -2,104 +2,13 @@ import webapp2
 import random
 from slacker import Slacker
 import json
-# import model
+import model
 
 
 slack_token = "PUT YOUR TOKEN HERE"
 slack = Slacker(slack_token)
 
-# game = Tictactoe(None, None)
-# global game_instance
 game_instance = None
-
-
-class Tictactoe:
-
-	def __init__(self, creator_id, creator_name, other_player_id, other_player_name, channel):
-		#other user is the member that got challenged
-		#creator gets the x
-		#other_user gets the o
-		self.x = creator_id
-		self.x_name = creator_name
-		self.o = other_player_id
-		self.o_name = other_player_name
-		self.turn = self.x
-		self.channel = channel
-		#empyt board
-		self.board = {1:"--", 2:"--", 3:"--", 4:"--", 5:"--", 6:"--", 7:"--", 8:"--", 9:"--"}
-		
-
-	def getBoard(self):
-		out = ""
-		out += "| " + self.board[1] + " | " + self.board[2] + " | " + self.board[3] + " |\n"
-		# out += "\n" + "|---|---|---|" + "\n"
-		out += "| " + self.board[4] + " | " + self.board[5] + " | " + self.board[6] + " |\n"
-		# out += "\n" + "|---|---|---|" + "\n"
-		out += "| " + self.board[7] + " | " + self.board[8] + " | " + self.board[9] + " |"
-		return out
-
-
-
-	def updateTurn(self):
-		if self.turn == self.x:
-			self.turn = self.o
-		else:
-			self.turn = self.x
-
-
-	def addMark(self, player):
-		if player == self.x:
-			return "X"
-		else:
-			return "O"
-
-	#move is a position: 1,2,3,..,9
-	#if move is valid, add to the board and update the turn and show board and next turn,
-	#if an user win, show board and tell that user won the game
-	def makeMove(self, player, move):
-		#check if it is player's turn
-		if player != self.turn:
-			return "This isn't your turn"
-		#check if move if valid
-		if move not in self.board:
-			return "Invalid move"
-		
-		#add that move to the board and change turns
-		if self.board[move] == "--":
-			self.board[move] = self.addMark(player)
-			if self.isGameOver():
-				return self.getBoard() + "\n"+self.isGameOver()
-			# self.isGameOver()
-			self.updateTurn()
-
-			return self.getBoard() +  "\n player's turn: "+ self.getTurnName(self.turn)
-
-		else:
-			return "cell is occupied, try again \nplayer's turn: "+ self.getTurnName(self.turn)+ "\n board: \n"+ self.getBoard()
-
-
-
-	def isGameOver(self):
-		#check rows, columns and diagonals
-		if ((self.board[1] == self.board[2] == self.board[3] != "--") or 
-			(self.board[4] == self.board[5] == self.board[6] != "--") or 
-			(self.board[7] == self.board[8] == self.board[9] != "--") or 
-			(self.board[1] == self.board[4] == self.board[7] != "--") or 
-			(self.board[2] == self.board[5] == self.board[8] != "--") or 
-			(self.board[3] == self.board[6] == self.board[9] != "--") or 
-			(self.board[1] == self.board[5] == self.board[9] != "--") or
-			(self.board[3] == self.board[5] == self.board[7] != "--")):
-			return "winner is "  + self.getTurnName(self.turn)
-		else: 
-			return None
-
-
-	def getTurnName (self, turn_id):
-		if turn_id == self.x:
-			return self.x_name
-		elif turn_id == self.o:
-			return self.o_name
-
 
 
 
@@ -111,9 +20,6 @@ class Home(webapp2.RequestHandler):
 
         self.response.write('Hello, running!')
 
-    #     # game_instance = None
-    #     # game_instance = handlers(inp_array, game_instance, channel_id, self)
-
 
 class Game(webapp2.RequestHandler):
     """A POST Request Handler"""
@@ -121,9 +27,6 @@ class Game(webapp2.RequestHandler):
     def get(self):
         """Receives a GET request"""
         global game_instance
-        # self.response.write('Hello, running!')
-
-        # game_instance = None
         handlers(inp_array, channel_id, self)
 
 
@@ -134,14 +37,9 @@ class Game(webapp2.RequestHandler):
         global game_instance
 
         inp= self.request.get('text')
-        # channel_name = self.request.get('channel_name')
         channel_id = self.request.get('channel_id')
-
         inp_array = inp.split()
-
         handlers(inp_array, channel_id, self)
-
-        # return game_instance
 
 
 def handlers (inp_array, channel_id, self):
@@ -149,12 +47,10 @@ def handlers (inp_array, channel_id, self):
 	global game_instance
 
 	valid_commands = ["invite", "move", "board", "end", "help"]
+	valid_moves = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
 	if inp_array[0].lower() == "invite":
 		if game_instance != None:
-			print game_instance.x_name
-			print game_instance.o_name
-			print game_instance.getBoard()
 			text = "Game is currently being played in this channel. Wait until game is over or visit other channel"
 			print_slack(text, channel_id, self)
 
@@ -164,7 +60,6 @@ def handlers (inp_array, channel_id, self):
 			current_user_name = self.request.get('user_name')
 			current_user_id = self.request.get('user_id')
 			other_user_id = get_user_id(mention, channel_id, self)
-			print other_user_id
 
 			if other_user_id == "invalid":
 				text = "Mention was invalid. Invite a member in this channel by typing invite @VALIDMEMBER"
@@ -172,16 +67,14 @@ def handlers (inp_array, channel_id, self):
 				return
 
 			else:
-				print "im not invalid user! "
 				other_user_name = get_user_name(other_user_id, channel_id, self)
-				game_instance = Tictactoe(current_user_id, current_user_name, other_user_id, other_user_name, channel_id)
+				game_instance = model.Tictactoe(current_user_id, current_user_name, other_user_id, other_user_name, channel_id)
 		        text = current_user_name + " challenged " + "@"+other_user_name+ "\n turn: " + current_user_name
 		        print_slack (text, channel_id, self)
 
 
 	if inp_array[0].lower() == "move":
 		user_id = self.request.get('user_id')
-		print "this user is: "+ user_id
 		move = inp_array[1]
 
 		if game_instance != None:
@@ -195,12 +88,13 @@ def handlers (inp_array, channel_id, self):
 				print_slack(text, channel_id, self)
 
 			if self.request.get('channel_id') == game_instance.channel and user_id == game_instance.turn:
-				if move in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+				if move in valid_moves:
 					text = game_instance.makeMove(user_id, int(move))
+					if game_instance.isGameOver()[0]:
+						game_instance = None
 					print_slack (text, channel_id, self)
-					print "changed turn: " + game_instance.turn
-    			if move not in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
-    				text = "Valid move is a integer from 1 to 9.\nplayer's turn: "+ game_instance.getTurnName(game_instance.turn) + "\n board: \n"+ game_instance.getBoard()
+    			if move not in valid_moves:
+    				text = "Invalid move. \nValid move is a integer from 1 to 9.\nplayer's turn: "+ game_instance.getTurnName(game_instance.turn) + "\n board: \n"+ game_instance.getBoard()
     				print_slack (text, channel_id, self)		
 
 		else:
@@ -214,20 +108,20 @@ def handlers (inp_array, channel_id, self):
 			if self.request.get('channel_id') == game_instance.channel:
 				text = game_instance.getBoard()+"\nturn: " + game_instance.getTurnName (game_instance.turn)
 				print_slack (text, channel_id, self)
-		if game_instance == None:
-			if self.request.get('channel_id') == game_instance.channel:
-				text = "There isn't any game being played.\nTo start a game TYPE: invite @memtion"
-				print_slack(text, channel_id, self)
+		# if game_instance == None:
+		else:
+			text = "There isn't any game being played.\nTo start a game TYPE: invite @memtion"
+			print_slack(text, channel_id, self)
 
 
 	if inp_array[0].lower() == "end":
 
 		if game_instance == None:
-			if self.request.get('channel_id') == game_instance.channel:
-				text = "There isn't any game being played.\nTo start a game TYPE: invite @memtion"
-				print_slack (text, channel_id, self)
+			text = "There isn't any game being played.\nTo start a game TYPE: invite @memtion"
+			print_slack (text, channel_id, self)
 
-		if game_instance != None:
+		# if game_instance != None:
+		else:
 			if self.request.get('channel_id') == game_instance.channel and (self.request.get('user_id') == game_instance.x or self.request.get('user_id') == game_instance.o):
 				game_instance = None
 				text = self.request.get('user_name') + " ended the game"
@@ -240,7 +134,7 @@ def handlers (inp_array, channel_id, self):
 
 	if inp_array[0].lower() == "help":
 		text = "Invite a player by typing: INVITE @mention \n"
-		text += "Only current players can make moves or end the game"
+		text += "Only current players can make moves or end the game\n"
 		text += "To make a valid MOVE choose numbers from 1-9 \n| 1 | 2 | 3 |\n| 4 | 5 | 6 |\n| 7 | 8 | 9 |\n For example: MOVE 2 \n"
 		text += "To end the game type in END\n"
 		text += "Any member in the channel can see the board and whose turn is it by typing BOARD\n"
@@ -249,7 +143,7 @@ def handlers (inp_array, channel_id, self):
 
 
 	if inp_array[0].lower() not in valid_commands:
-		text = inp_array[0].lower() +"is not a valid command. Try typing"
+		text = inp_array[0].lower() +" is not a valid command. Try typing "
 		for command in valid_commands:
 			text += command + ", "
 		print_slack(text, channel_id, self)
@@ -294,8 +188,6 @@ app = webapp2.WSGIApplication([
                         debug=True)
 
 
-# def __unicode__(self):
-#    return unicode(self.some_field) or u''
 
 def main():
     """Runs webservice"""
