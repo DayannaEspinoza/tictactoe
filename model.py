@@ -2,13 +2,14 @@
 
 class Tictactoe:
 
-	def __init__(self, creator, other_player):
+	def __init__(self, creator, other_player, channel):
 		#other user is the member that got challenged
 		#creator gets the x
 		#other_user gets the o
 		self.x = creator
 		self.o = other_player
 		self.turn = self.x
+		self.channel = channel
 		#empyt board
 		self.board = {1:"-", 2:"-", 3:"-", 4:"-", 5:"-", 6:"-", 7:"-", 8:"-", 9:"-"}
 		

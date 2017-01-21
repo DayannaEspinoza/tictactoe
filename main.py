@@ -4,11 +4,104 @@ from slacker import Slacker
 import json
 # import model
 
-slack_token = "xoxp-125092052758-124344639443-127119724800-3979fca47818504b3675a09d04669c49"
+
+slack_token = "PUT YOUR TOKEN HERE"
 slack = Slacker(slack_token)
 
 # game = Tictactoe(None, None)
+# global game_instance
 game_instance = None
+
+
+class Tictactoe:
+
+	def __init__(self, creator_id, creator_name, other_player_id, other_player_name, channel):
+		#other user is the member that got challenged
+		#creator gets the x
+		#other_user gets the o
+		self.x = creator_id
+		self.x_name = creator_name
+		self.o = other_player_id
+		self.o_name = other_player_name
+		self.turn = self.x
+		self.channel = channel
+		#empyt board
+		self.board = {1:"-", 2:"-", 3:"-", 4:"-", 5:"-", 6:"-", 7:"-", 8:"-", 9:"-"}
+		
+
+	def getBoard(self):
+		out = ""
+		out += "| " + self.board[1] + " | " + self.board[2] + " | " + self.board[3] + " |"
+		out += "\n" + "|---|---|---|" + "\n"
+		out += "| " + self.board[4] + " | " + self.board[5] + " | " + self.board[6] + " |"
+		out += "\n" + "|---|---|---|" + "\n"
+		out += "| " + self.board[7] + " | " + self.board[8] + " | " + self.board[9] + " |"
+		return out
+
+
+
+	def updateTurn(self):
+		if self.turn == self.x:
+			self.turn = self.o
+		else:
+			self.turn = self.x
+
+
+	def addMark(self, player):
+		if player == self.x:
+			return "X"
+		else:
+			return "O"
+
+	#move is a position: 1,2,3,..,9
+	#if move is valid, add to the board and update the turn and show board and next turn,
+	#if an user win, show board and tell that user won the game
+	def makeMove(self, player, move):
+		#check if it is player's turn
+		if player != self.turn:
+			return "This isn't your turn"
+		#check if move if valid
+		if move not in self.board:
+			return "Invalid move"
+		
+		#add that move to the board and change turns
+		if self.board[move] == "-":
+			self.board[move] = self.addMark(player)
+			if self.isGameOver():
+				return self.getBoard() + "\n"+self.isGameOver()
+			# self.isGameOver()
+			self.updateTurn()
+
+			return self.getBoard() +  "\n player's turn: "+ self.getTurnName(self.turn)
+
+		else:
+			return "cell is occupied, try again"
+
+
+
+	def isGameOver(self):
+		#check rows, columns and diagonals
+		if ((self.board[1] == self.board[2] == self.board[3] != "-") or 
+			(self.board[4] == self.board[5] == self.board[6] != "-") or 
+			(self.board[7] == self.board[8] == self.board[9] != "-") or 
+			(self.board[1] == self.board[4] == self.board[7] != "-") or 
+			(self.board[2] == self.board[5] == self.board[8] != "-") or 
+			(self.board[3] == self.board[6] == self.board[9] != "-") or 
+			(self.board[1] == self.board[5] == self.board[9] != "-") or
+			(self.board[3] == self.board[5] == self.board[7] != "-")):
+			return "winner is "  + self.getTurnName(self.turn)
+		else: 
+			return None
+
+
+	def getTurnName (self, turn_id):
+		if turn_id == self.x:
+			return self.x_name
+		elif turn_id == self.o:
+			return self.o_name
+
+
+
 
 class Home(webapp2.RequestHandler):
     """A GET Request Handler"""
@@ -18,133 +111,168 @@ class Home(webapp2.RequestHandler):
 
         self.response.write('Hello, running!')
 
+    #     # game_instance = None
+    #     # game_instance = handlers(inp_array, game_instance, channel_id, self)
+
 
 class Game(webapp2.RequestHandler):
     """A POST Request Handler"""
 
+    def get(self):
+        """Receives a GET request"""
+        global game_instance
+        # self.response.write('Hello, running!')
+
+        # game_instance = None
+        handlers(inp_array, channel_id, self)
+
+
+
     def post(self):
         """Receives a POST request"""
 
+        global game_instance
+
         inp= self.request.get('text')
-        channel_name = self.request.get('channel_name')
+        # channel_name = self.request.get('channel_name')
         channel_id = self.request.get('channel_id')
-        current_user_name = self.request.get('user_name')
-        current_user_id = self.request.get('user_id')
+        # current_user_name = None
+        # current_user_id = None
+        # other_user_id = None
+        # other_user_name = None
 
-        ##############
-        other_user_id = None
-        other_user_name = None
+        inp_array = inp.split()
 
-        get_input(inp, channel_id, self)
-        ###########
-        # other_user_id = get_other_user(inp, channel_id, self)[0]
-        # other_user_name = get_other_user(inp, channel_id, self)[1]
+        # self.response.headers['Content-type'] = 'application/json'
+        # my_json = {'text': inp, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+        # test_json = json.dumps(my_json)
+        # self.response.write(test_json)
+        # game_instance = None
+        handlers(inp_array, channel_id, self)
 
-        if other_user_id:
-        	other_user_name = get_other_user_name(other_user_id, channel_id, self)
-        	text = current_user_name +" challenged "+other_user_name
-        	get_challenged_text(text, current_user_name, other_user_name, channel_id, self)
-        	game_instance = Tictactoe(current_user_id, other_user_id)
-
-        	play_tictactoe(inp, channel_id, current_user_name, self)
-        
+        # return game_instance
 
 
-# def get_other_user(inp, channel_id, self):
-# 	inp_array = inp.split()
-# 	if "invite" == inp_array[0].lower():
-# 		if inp_array[1][0] == "@":
-# 			member = inp_array[1][1:]
-# 			print member
-# 			member_id = ""
-# 			for user in slack.users.list().body['members']:
-# 				if user['name'] == member:
-# 					member_id = user["id"]
+def handlers (inp_array, channel_id, self):
 
-# 			if member_id in slack.channels.info(channel_id).body['channel']['members']:
-# 				return (member_id, member)
-# 	else:
-# 		return "wrong command"
+	global game_instance
 
-def get_input(inp, channel_id, self):
-	inp_array = inp.split()
-	action = inp_array[0]
+	if inp_array[0].lower() == "invite":
+		if game_instance == None:
+			mention = inp_array[1]
+			channel_id = self.request.get('channel_id')
+			current_user_name = self.request.get('user_name')
+			current_user_id = self.request.get('user_id')
+			other_user_id = get_user_id(mention, channel_id, self)
+			other_user_name = get_user_name(other_user_id, channel_id, self)
+			
+			game_instance = Tictactoe(current_user_id, current_user_name, other_user_id, other_user_name, channel_id)
+	        print game_instance.getBoard()
+	        text = current_user_name + " challenged " + "@"+other_user_name+ "\n turn: " + current_user_name
+	        self.response.headers['Content-type'] = 'application/json'
+	        my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+	        test_json = json.dumps(my_json)
+	        self.response.write(test_json)
+        # else:
+        # 	self.response.headers['Content-type'] = 'application/json'
+        # 	text = "game is currently being played in this channel. Wait until game is over or visit other channel"
+        # 	my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+        # 	test_json = json.dumps(my_json)
+        # 	self.response.write(test_json)
 
-	if "invite" == action.lower():
-		print "GOT THE INVITE PART"
-		other_user_name =  get_other_user_id(inp_array[1], channel_id, self)
-		return other_user_name
 
-	# if "display" == action.lower():
-	# 	if game_instance == None:
+	if inp_array[0].lower() == "move":
+		if game_instance != None:
+			user_id = self.request.get('user_id')
+			print game_instance.getBoard()
+	        print game_instance.x
+	        print game_instance.o
+    		if self.request.get('channel_id') == game_instance.channel and user_id == game_instance.turn:
+    			move = int(inp_array[1])
+    			if move in range(1,10):
+    				text = game_instance.makeMove(user_id, move)
+    				self.response.headers['Content-type'] = 'application/json'
+    				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+    				test_json = json.dumps(my_json)
+    				self.response.write(test_json)
+    			else:
+					self.response.headers['Content-type'] = 'application/json'
+					my_json = {'text': "move is a integer from 1 to 9", 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+					test_json = json.dumps(my_json)
+					self.response.write(test_json)
+			
+			if self.request.get('channel_id') == game_instance.channel and user_id != game_instance.x and user_id != game_instance.o:
+				self.response.headers['Content-type'] = 'application/json'
+				text = "You aren't playing the game. Wait until the game ends"
+				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+				test_json = json.dumps(my_json)
+				self.response.write(test_json)
 
-def get_other_user_id(mention, channel_id, self):
-	if mention == "@":
+			else:
+				self.response.headers['Content-type'] = 'application/json'
+				text = "This isn't your turn, wait until other player makes a move. \n player's turn: "+ game_instance.getTurnName(game_instance.turn)
+				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+				test_json = json.dumps(my_json)
+				self.response.write(test_json)
+		else:
+			text = "There isnt a game being played.\nTo start a game TYPE invite @mention"
+			self.response.headers['Content-type'] = 'application/json'
+			my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+			test_json = json.dumps(my_json)
+			self.response.write(test_json)
+
+
+	if inp_array[0].lower() == "end":
+		if game_instance != None:
+			if self.request.get('channel_id') == game_instance.channel and (self.request.get('user_id') == game_instance.x or self.request.get('user_id') == game_instance.o):
+				game_instance = None
+				self.response.headers['Content-type'] = 'application/json'
+				text = self.request.get('user_name') + " ended the game"
+				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+				test_json = json.dumps(my_json)
+				self.response.write(test_json)
+			else:
+				text = "you aren't playing the game, only current players can end the game"
+				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+				test_json = json.dumps(my_json)
+				self.response.write(test_json)
+
+		else:
+			if self.request.get('channel_id') == game_instance.channel:
+				text = "There isn't any game being played.\nTo start a game TYPE: invite @memtion"
+				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+				test_json = json.dumps(my_json)
+				self.response.write(test_json)
+
+
+	if inp_array[0].lower() == "board":
+		if game_instance != None:
+			if self.request.get('channel_id') == game_instance.channel:
+				self.response.headers['Content-type'] = 'application/json'
+				text = game_instance.getBoard()+"\nturn: " + game_instance.getTurnName (game_instance.turn)
+				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+				test_json = json.dumps(my_json)
+				self.response.write(test_json)
+
+
+	return game_instance
+
+
+def get_user_id(mention, channel_id, self):
+	if mention[0] == "@":
 		member = mention[1:]
-		# print member
 		member_id = ""
 		for user in slack.users.list().body['members']:
 			if user['name'] == member:
 				member_id = user["id"]
 
 		if member_id in slack.channels.info(channel_id).body['channel']['members']:
-			# other_user_id = member_id
-			print "I GOT get other user id"
-        	return member_id
+			return member_id
 
-def get_other_user_name(other_user_id, channel_id, self):
+def get_user_name(user_id, channel_id, self):
 	for user in slack.users.list().body['members']:
-			if user['id'] == other_user_id:
+			if user['id'] == user_id:
 				return user["name"]
-
-
-def get_challenged_text(text, current_user_name, other_user_name, channel_id, self):
-	self.response.headers['Content-type'] = 'application/json'
-	my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-	test_json = json.dumps(my_json)
-	self.response.write(test_json)
-
-def display_text(game_instance, channel_id, self):
-	if game_instance == None:
-		self.response.headers['Content-type'] = 'application/json'
-		my_json = {'text': "Start inviting someone", 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-		test_json = json.dumps(my_json)
-		self.response.write(test_json)
-	else:
-		self.response.headers['Content-type'] = 'application/json'
-		text = "board: " + game_instance.getBoard() +"\nturn: " +game_instance.turn
-		my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-		test_json = json.dumps(my_json)
-		self.response.write(test_json)
-
-
-
-# def start_game(current_user_id, other_user_id, channel_id, game_instance, self):
-# 	game_instance = Tictactoe(current_user_id, other_user_id)
-
-
-
-
-def play_tictactoe(inp, channel_id, current_user_name, self):
-    """this plays rock paper scissors"""
-
-    num = random.randint(0, 3)
-    inp = inp.lower()
-
-    # self.response.["response_type"] = "in_channel"
-
-    # User picks rock
-    if inp == "rock":
-
-    	# self.response = json.dumps(json.loads(self.response.body).response_type = "in_channel")
-    	# self.response.write("doing rocks")
-
-    	self.response.headers['Content-type'] = 'application/json'
-    	text = "@"+current_user_name+ " hellllllloooo"
-    	my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-    	test_json = json.dumps(my_json)
-    	self.response.write(test_json)
-
 
 
 
@@ -154,6 +282,9 @@ app = webapp2.WSGIApplication([
                         ],
                         debug=True)
 
+
+# def __unicode__(self):
+#    return unicode(self.some_field) or u''
 
 def main():
     """Runs webservice"""
