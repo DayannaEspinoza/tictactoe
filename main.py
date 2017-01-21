@@ -4,8 +4,8 @@ from slacker import Slacker
 import json
 # import model
 
-slack_token = "xoxp-125092052758-124344639443-128446735155-6c2ccd027d97239625490b3ede029263"
-# slack_token = "PUT YOUR TOKEN HERE"
+
+slack_token = "PUT YOUR TOKEN HERE"
 slack = Slacker(slack_token)
 
 # game = Tictactoe(None, None)
@@ -26,15 +26,15 @@ class Tictactoe:
 		self.turn = self.x
 		self.channel = channel
 		#empyt board
-		self.board = {1:"-", 2:"-", 3:"-", 4:"-", 5:"-", 6:"-", 7:"-", 8:"-", 9:"-"}
+		self.board = {1:"--", 2:"--", 3:"--", 4:"--", 5:"--", 6:"--", 7:"--", 8:"--", 9:"--"}
 		
 
 	def getBoard(self):
 		out = ""
-		out += "| " + self.board[1] + " | " + self.board[2] + " | " + self.board[3] + " |"
-		out += "\n" + "|---|---|---|" + "\n"
-		out += "| " + self.board[4] + " | " + self.board[5] + " | " + self.board[6] + " |"
-		out += "\n" + "|---|---|---|" + "\n"
+		out += "| " + self.board[1] + " | " + self.board[2] + " | " + self.board[3] + " |\n"
+		# out += "\n" + "|---|---|---|" + "\n"
+		out += "| " + self.board[4] + " | " + self.board[5] + " | " + self.board[6] + " |\n"
+		# out += "\n" + "|---|---|---|" + "\n"
 		out += "| " + self.board[7] + " | " + self.board[8] + " | " + self.board[9] + " |"
 		return out
 
@@ -65,7 +65,7 @@ class Tictactoe:
 			return "Invalid move"
 		
 		#add that move to the board and change turns
-		if self.board[move] == "-":
+		if self.board[move] == "--":
 			self.board[move] = self.addMark(player)
 			if self.isGameOver():
 				return self.getBoard() + "\n"+self.isGameOver()
@@ -75,20 +75,20 @@ class Tictactoe:
 			return self.getBoard() +  "\n player's turn: "+ self.getTurnName(self.turn)
 
 		else:
-			return "cell is occupied, try again \nplayer's turn: "+ self.getTurnName(self.turn)
+			return "cell is occupied, try again \nplayer's turn: "+ self.getTurnName(self.turn)+ "\n board: \n"+ self.getBoard()
 
 
 
 	def isGameOver(self):
 		#check rows, columns and diagonals
-		if ((self.board[1] == self.board[2] == self.board[3] != "-") or 
-			(self.board[4] == self.board[5] == self.board[6] != "-") or 
-			(self.board[7] == self.board[8] == self.board[9] != "-") or 
-			(self.board[1] == self.board[4] == self.board[7] != "-") or 
-			(self.board[2] == self.board[5] == self.board[8] != "-") or 
-			(self.board[3] == self.board[6] == self.board[9] != "-") or 
-			(self.board[1] == self.board[5] == self.board[9] != "-") or
-			(self.board[3] == self.board[5] == self.board[7] != "-")):
+		if ((self.board[1] == self.board[2] == self.board[3] != "--") or 
+			(self.board[4] == self.board[5] == self.board[6] != "--") or 
+			(self.board[7] == self.board[8] == self.board[9] != "--") or 
+			(self.board[1] == self.board[4] == self.board[7] != "--") or 
+			(self.board[2] == self.board[5] == self.board[8] != "--") or 
+			(self.board[3] == self.board[6] == self.board[9] != "--") or 
+			(self.board[1] == self.board[5] == self.board[9] != "--") or
+			(self.board[3] == self.board[5] == self.board[7] != "--")):
 			return "winner is "  + self.getTurnName(self.turn)
 		else: 
 			return None
@@ -148,25 +148,35 @@ def handlers (inp_array, channel_id, self):
 
 	global game_instance
 
+	valid_commands = ["invite", "move", "board", "end", "help"]
+
 	if inp_array[0].lower() == "invite":
+		if game_instance != None:
+			print game_instance.x_name
+			print game_instance.o_name
+			print game_instance.getBoard()
+			text = "Game is currently being played in this channel. Wait until game is over or visit other channel"
+			print_slack(text, channel_id, self)
+
 		if game_instance == None:
 			mention = inp_array[1]
 			channel_id = self.request.get('channel_id')
 			current_user_name = self.request.get('user_name')
 			current_user_id = self.request.get('user_id')
 			other_user_id = get_user_id(mention, channel_id, self)
-			other_user_name = get_user_name(other_user_id, channel_id, self)
-			
-			game_instance = Tictactoe(current_user_id, current_user_name, other_user_id, other_user_name, channel_id)
-	       
-	        text = current_user_name + " challenged " + "@"+other_user_name+ "\n turn: " + current_user_name
-	        self.response.headers['Content-type'] = 'application/json'
-	        my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-	        test_json = json.dumps(my_json)
-	        self.response.write(test_json)
-        # if game_instance != None:
-        # 	text = "game is currently being played in this channel. Wait until game is over or visit other channel"
-        # 	print_slack (text, channel_id, self)
+			print other_user_id
+
+			if other_user_id == "invalid":
+				text = "Mention was invalid. Invite a member in this channel by typing invite @VALIDMEMBER"
+				print_slack (text, channel_id, self)
+				return
+
+			else:
+				print "im not invalid user! "
+				other_user_name = get_user_name(other_user_id, channel_id, self)
+				game_instance = Tictactoe(current_user_id, current_user_name, other_user_id, other_user_name, channel_id)
+		        text = current_user_name + " challenged " + "@"+other_user_name+ "\n turn: " + current_user_name
+		        print_slack (text, channel_id, self)
 
 
 	if inp_array[0].lower() == "move":
@@ -176,8 +186,12 @@ def handlers (inp_array, channel_id, self):
 
 		if game_instance != None:
 
+			if self.request.get('channel_id') == game_instance.channel and user_id != game_instance.x and user_id != game_instance.o:
+				text = "You aren't playing the game. Wait until the game ends" 
+				print_slack (text, channel_id, self)
+
 			if self.request.get('channel_id') == game_instance.channel and  user_id != game_instance.turn:
-				text = text = "This isn't your turn, wait until other player makes a move. \n player's turn: "+ game_instance.getTurnName(game_instance.turn) + "\n board: "+ game_instance.getBoard()
+				text = text = "This isn't your turn, wait until other player makes a move. \n player's turn: "+ game_instance.getTurnName(game_instance.turn) + "\n board: \n"+ game_instance.getBoard()
 				print_slack(text, channel_id, self)
 
 			if self.request.get('channel_id') == game_instance.channel and user_id == game_instance.turn:
@@ -186,15 +200,11 @@ def handlers (inp_array, channel_id, self):
 					print_slack (text, channel_id, self)
 					print "changed turn: " + game_instance.turn
     			if move not in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
-    				text = "move is a integer from 1 to 9.\nplayer's turn: "+ game_instance.getTurnName(game_instance.turn)
-    				print_slack (text, channel_id, self)
-
-			if self.request.get('channel_id') == game_instance.channel and user_id != game_instance.x and user_id != game_instance.o:
-				text = "You aren't playing the game. Wait until the game ends" 
-				print_slack (text, channel_id, self)
+    				text = "Valid move is a integer from 1 to 9.\nplayer's turn: "+ game_instance.getTurnName(game_instance.turn) + "\n board: \n"+ game_instance.getBoard()
+    				print_slack (text, channel_id, self)		
 
 		else:
-			text = "There isnt a game being played.\nTo start a game TYPE invite @mention"
+			text = "There isn't a game being played.\nTo start a game TYPE invite @mention"
 			print_slack (text, channel_id, self)
 
 
@@ -222,9 +232,27 @@ def handlers (inp_array, channel_id, self):
 				game_instance = None
 				text = self.request.get('user_name') + " ended the game"
 				print_slack (text, channel_id, self)
+				return game_instance
 			else:
-				text = "you aren't playing the game, only current players can end the game"
+				text = "You aren't playing the game, only current players can end the game"
 				print_slack (text, channel_id, self)
+				return
+
+	if inp_array[0].lower() == "help":
+		text = "Invite a player by typing: INVITE @mention \n"
+		text += "Only current players can make moves or end the game"
+		text += "To make a valid MOVE choose numbers from 1-9 \n| 1 | 2 | 3 |\n| 4 | 5 | 6 |\n| 7 | 8 | 9 |\n For example: MOVE 2 \n"
+		text += "To end the game type in END\n"
+		text += "Any member in the channel can see the board and whose turn is it by typing BOARD\n"
+		text += "There could be only one game being played at the time in a channel\n"
+		print_slack(text, channel_id, self)
+
+
+	if inp_array[0].lower() not in valid_commands:
+		text = inp_array[0].lower() +"is not a valid command. Try typing"
+		for command in valid_commands:
+			text += command + ", "
+		print_slack(text, channel_id, self)
 
 
 	return game_instance
@@ -240,6 +268,10 @@ def get_user_id(mention, channel_id, self):
 
 		if member_id in slack.channels.info(channel_id).body['channel']['members']:
 			return member_id
+		else: 
+			return "invalid"
+	else:
+		return "invalid"
 
 def get_user_name(user_id, channel_id, self):
 	for user in slack.users.list().body['members']:
