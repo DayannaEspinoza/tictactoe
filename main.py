@@ -4,8 +4,8 @@ from slacker import Slacker
 import json
 # import model
 
-
-slack_token = "PUT YOUR TOKEN HERE"
+slack_token = "xoxp-125092052758-124344639443-128446735155-6c2ccd027d97239625490b3ede029263"
+# slack_token = "PUT YOUR TOKEN HERE"
 slack = Slacker(slack_token)
 
 # game = Tictactoe(None, None)
@@ -75,7 +75,7 @@ class Tictactoe:
 			return self.getBoard() +  "\n player's turn: "+ self.getTurnName(self.turn)
 
 		else:
-			return "cell is occupied, try again"
+			return "cell is occupied, try again \nplayer's turn: "+ self.getTurnName(self.turn)
 
 
 
@@ -136,18 +136,9 @@ class Game(webapp2.RequestHandler):
         inp= self.request.get('text')
         # channel_name = self.request.get('channel_name')
         channel_id = self.request.get('channel_id')
-        # current_user_name = None
-        # current_user_id = None
-        # other_user_id = None
-        # other_user_name = None
 
         inp_array = inp.split()
 
-        # self.response.headers['Content-type'] = 'application/json'
-        # my_json = {'text': inp, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-        # test_json = json.dumps(my_json)
-        # self.response.write(test_json)
-        # game_instance = None
         handlers(inp_array, channel_id, self)
 
         # return game_instance
@@ -167,92 +158,73 @@ def handlers (inp_array, channel_id, self):
 			other_user_name = get_user_name(other_user_id, channel_id, self)
 			
 			game_instance = Tictactoe(current_user_id, current_user_name, other_user_id, other_user_name, channel_id)
-	        print game_instance.getBoard()
+	       
 	        text = current_user_name + " challenged " + "@"+other_user_name+ "\n turn: " + current_user_name
 	        self.response.headers['Content-type'] = 'application/json'
 	        my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
 	        test_json = json.dumps(my_json)
 	        self.response.write(test_json)
-        # else:
-        # 	self.response.headers['Content-type'] = 'application/json'
+        # if game_instance != None:
         # 	text = "game is currently being played in this channel. Wait until game is over or visit other channel"
-        # 	my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-        # 	test_json = json.dumps(my_json)
-        # 	self.response.write(test_json)
+        # 	print_slack (text, channel_id, self)
 
 
 	if inp_array[0].lower() == "move":
-		if game_instance != None:
-			user_id = self.request.get('user_id')
-			print game_instance.getBoard()
-	        print game_instance.x
-	        print game_instance.o
-    		if self.request.get('channel_id') == game_instance.channel and user_id == game_instance.turn:
-    			move = int(inp_array[1])
-    			if move in range(1,10):
-    				text = game_instance.makeMove(user_id, move)
-    				self.response.headers['Content-type'] = 'application/json'
-    				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-    				test_json = json.dumps(my_json)
-    				self.response.write(test_json)
-    			else:
-					self.response.headers['Content-type'] = 'application/json'
-					my_json = {'text': "move is a integer from 1 to 9", 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-					test_json = json.dumps(my_json)
-					self.response.write(test_json)
-			
-			if self.request.get('channel_id') == game_instance.channel and user_id != game_instance.x and user_id != game_instance.o:
-				self.response.headers['Content-type'] = 'application/json'
-				text = "You aren't playing the game. Wait until the game ends"
-				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-				test_json = json.dumps(my_json)
-				self.response.write(test_json)
+		user_id = self.request.get('user_id')
+		print "this user is: "+ user_id
+		move = inp_array[1]
 
-			else:
-				self.response.headers['Content-type'] = 'application/json'
-				text = "This isn't your turn, wait until other player makes a move. \n player's turn: "+ game_instance.getTurnName(game_instance.turn)
-				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-				test_json = json.dumps(my_json)
-				self.response.write(test_json)
+		if game_instance != None:
+
+			if self.request.get('channel_id') == game_instance.channel and  user_id != game_instance.turn:
+				text = text = "This isn't your turn, wait until other player makes a move. \n player's turn: "+ game_instance.getTurnName(game_instance.turn) + "\n board: "+ game_instance.getBoard()
+				print_slack(text, channel_id, self)
+
+			if self.request.get('channel_id') == game_instance.channel and user_id == game_instance.turn:
+				if move in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+					text = game_instance.makeMove(user_id, int(move))
+					print_slack (text, channel_id, self)
+					print "changed turn: " + game_instance.turn
+    			if move not in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+    				text = "move is a integer from 1 to 9.\nplayer's turn: "+ game_instance.getTurnName(game_instance.turn)
+    				print_slack (text, channel_id, self)
+
+			if self.request.get('channel_id') == game_instance.channel and user_id != game_instance.x and user_id != game_instance.o:
+				text = "You aren't playing the game. Wait until the game ends" 
+				print_slack (text, channel_id, self)
+
 		else:
 			text = "There isnt a game being played.\nTo start a game TYPE invite @mention"
-			self.response.headers['Content-type'] = 'application/json'
-			my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-			test_json = json.dumps(my_json)
-			self.response.write(test_json)
+			print_slack (text, channel_id, self)
 
-
-	if inp_array[0].lower() == "end":
-		if game_instance != None:
-			if self.request.get('channel_id') == game_instance.channel and (self.request.get('user_id') == game_instance.x or self.request.get('user_id') == game_instance.o):
-				game_instance = None
-				self.response.headers['Content-type'] = 'application/json'
-				text = self.request.get('user_name') + " ended the game"
-				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-				test_json = json.dumps(my_json)
-				self.response.write(test_json)
-			else:
-				text = "you aren't playing the game, only current players can end the game"
-				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-				test_json = json.dumps(my_json)
-				self.response.write(test_json)
-
-		else:
-			if self.request.get('channel_id') == game_instance.channel:
-				text = "There isn't any game being played.\nTo start a game TYPE: invite @memtion"
-				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-				test_json = json.dumps(my_json)
-				self.response.write(test_json)
 
 
 	if inp_array[0].lower() == "board":
 		if game_instance != None:
 			if self.request.get('channel_id') == game_instance.channel:
-				self.response.headers['Content-type'] = 'application/json'
 				text = game_instance.getBoard()+"\nturn: " + game_instance.getTurnName (game_instance.turn)
-				my_json = {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
-				test_json = json.dumps(my_json)
-				self.response.write(test_json)
+				print_slack (text, channel_id, self)
+		if game_instance == None:
+			if self.request.get('channel_id') == game_instance.channel:
+				text = "There isn't any game being played.\nTo start a game TYPE: invite @memtion"
+				print_slack(text, channel_id, self)
+
+
+	if inp_array[0].lower() == "end":
+
+		if game_instance == None:
+			if self.request.get('channel_id') == game_instance.channel:
+				text = "There isn't any game being played.\nTo start a game TYPE: invite @memtion"
+				print_slack (text, channel_id, self)
+
+		if game_instance != None:
+			if self.request.get('channel_id') == game_instance.channel and (self.request.get('user_id') == game_instance.x or self.request.get('user_id') == game_instance.o):
+				game_instance = None
+				text = self.request.get('user_name') + " ended the game"
+				print_slack (text, channel_id, self)
+			else:
+				text = "you aren't playing the game, only current players can end the game"
+				print_slack (text, channel_id, self)
 
 
 	return game_instance
@@ -273,6 +245,13 @@ def get_user_name(user_id, channel_id, self):
 	for user in slack.users.list().body['members']:
 			if user['id'] == user_id:
 				return user["name"]
+
+def print_slack (text, channel_id, self):
+	self.response.headers['Content-type'] = 'application/json'
+	my_json =  {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
+	my_json_dump = json.dumps(my_json)
+	self.response.write(my_json_dump)
+
 
 
 
