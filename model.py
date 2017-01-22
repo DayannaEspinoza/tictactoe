@@ -2,10 +2,19 @@
 
 class Tictactoe:
 
+	""" Tictactoe model for the game
+
+    Attributes:
+        x 			tictactoe creator's id
+        x_name 		tictactoe creator's username
+        o 			tictactoe other player's id
+        o_name 		tictactoe other player's username
+        turn 		player's whose turn is. It could only be either x or o
+        channel		channel id where the game happens
+        board 		game board that stores marks and positions of the game
+    """
+
 	def __init__(self, creator_id, creator_name, other_player_id, other_player_name, channel):
-		#other user is the member that got challenged
-		#creator gets the x
-		#other_user gets the o
 		self.x = creator_id
 		self.x_name = creator_name
 		self.o = other_player_id
@@ -17,6 +26,12 @@ class Tictactoe:
 		
 
 	def getBoard(self):
+		"""
+	    Creates the visual represention of self.board
+	    It contains either "--" when a cell is empty or a number from 1-9 if the cell is occupied
+	    Parameters: None
+	    Return type: String
+    	"""
 		out = ""
 		out += "| " + self.board[1] + " | " + self.board[2] + " | " + self.board[3] + " |\n"
 		out += "| " + self.board[4] + " | " + self.board[5] + " | " + self.board[6] + " |\n"
@@ -24,8 +39,11 @@ class Tictactoe:
 		return out
 
 
-
 	def updateTurn(self):
+		"""
+	    Update the player's turn every time a valid move happens
+	    Parameters: None
+    	"""
 		if self.turn == self.x:
 			self.turn = self.o
 		else:
@@ -33,28 +51,35 @@ class Tictactoe:
 
 
 	def addMark(self, player):
+		"""
+	    Add "X" or "O" to the board to update the state its state.
+	    Parameters: player either x or o
+	    Return type: String represenation of the player ("X" for the creator and "O" for the other player)
+    	"""
 		if player == self.x:
 			return "X"
 		else:
 			return "O"
 
-	#move is a position: 1,2,3,..,9
-	#if move is valid, add to the board and update the turn and show board and next turn,
-	#if an user win, show board and tell that user won the game
-	# def makeMove(self, player, move):
-	# 	#check if it is player's turn
-	# 	if player != self.turn:
-	# 		return "This isn't your turn"
-	# 	#check if move if valid
-	# 	if move not in self.board:
-	# 		return "Invalid move"
-		
 	
-
-	#returns the self object
 	def makeMove(self, player, move):
+		"""
+	    Given a specific player and a move, it checks if the player and move are valid.
+	    	If player and move arent valid, it outputs a string with feedback information
+	    	If they are valid, it updates the board information, checks if the game is over, 
+	    		update turns and outputs a string contains the board and whose turn is next
+	    	If the game is over and there is a winner, it outputs a string with the board and the winner username
+	    	If the game is over and there is a tie, it outputs a string with the board and "tie"
+
+	    Parameters:
+	    	player 	player id
+	    	move    move input from the player
+	    Return type: String
+
+    	"""
 		if player != self.turn:
 			return "This isn't your turn"
+
 		#if move is not 1-9
 		if move not in self.board:
 			return "Not a valid move"
@@ -77,7 +102,21 @@ class Tictactoe:
 			return "cell is occupied, try again \nplayer's turn: "+ self.getTurnName(self.turn)+ "\n board: \n"+ self.getBoard()
 
 
+
 	def isGameOver(self):
+		"""
+	    Checks if the game is over. If the game is over 2 conditions coudld happen:
+	    	win = If there is a winner
+	    	tie = None of the players winner
+	    If the game is over it outputs a tuple, where the first value is the boolean True 
+	    	and the second value contains condition ("win", "tie")
+
+	    If the game isnt over, it outputs a tuple, where the first value is the boolean False
+	    	and the second value is None
+
+	    Parameters: None
+	    Return type: tuple (Boolean, String/None)
+    	"""
 		if ((self.board[1] == self.board[2] == self.board[3] != "--") or 
 			(self.board[4] == self.board[5] == self.board[6] != "--") or 
 			(self.board[7] == self.board[8] == self.board[9] != "--") or 
@@ -95,7 +134,6 @@ class Tictactoe:
 				is_a_tie = False	
 
 		if is_a_tie:
-
 			return (True, "tie")
 
 		else:
@@ -104,15 +142,24 @@ class Tictactoe:
 
 
 
-
 	def getTurnName (self, turn_id):
+		"""
+	    Gets the username of the player whose turn is it
+	    Parameters: turn_id  (x or o)
+	    Return type: String (x_name or o_name)
+    	"""
 		if turn_id == self.x:
 			return self.x_name
 		elif turn_id == self.o:
 			return self.o_name
 
 
+
+
 game_instance = None
+"""
+Creates the game instance, to be initialized when the game starts
+"""
 
 
 
@@ -129,4 +176,4 @@ game_instance = None
 # game.makeMove("you", 4)
 # game.makeMove("me", 7)
 # game.makeMove("you", 8)
-# print game.makeMove("me", 9)
+# print game.makeMove("me", 9) TIE

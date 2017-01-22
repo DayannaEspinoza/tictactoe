@@ -30,7 +30,6 @@ class Game(webapp2.RequestHandler):
         handlers(inp_array, channel_id, self)
 
 
-
     def post(self):
         """Receives a POST request"""
 
@@ -43,12 +42,29 @@ class Game(webapp2.RequestHandler):
 
 
 def handlers (inp_array, channel_id, self):
+	"""
+    Uses the input from the slack user to determine what action them want to play 
+    such as Invite, move, board, end, help
+    It also updates the state of the game and players
+
+    Parameters: 
+    	inp_array 		array containing either 1 or 2 elements from the input typed by the player
+    	channel_id 		slack channel_id where the input comes from
+    Return the updated game_instance
+    """
 
 	global game_instance
 
 	valid_commands = ["invite", "move", "board", "end", "help"]
 	valid_moves = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
 
+
+	#If the input is INVITE it makes sure to check if the second element in inp_array has the correct input:
+	# @mention, where mention is a valid user in the current channel
+	# it provides feddback information if the @mention wasnt typed in properly,
+	#	 if the user mentioned isnt valid or if a game already started
+	#if @invite is valid, it creates the instance_game with the players and channel information to start the game
+	
 	if inp_array[0].lower() == "invite":
 		if game_instance != None:
 			text = "Game is currently being played in this channel. Wait until game is over or visit other channel"
@@ -73,11 +89,16 @@ def handlers (inp_array, channel_id, self):
 		        print_slack (text, channel_id, self)
 
 
+	#If the input is MOVE it makes sure to check if the second element in the inp_array is a valid move
+	#If move isnt a valid move, it provides information about what accepted moves are as well as the player's turn
+	#If the move is valid, it checks that that it comes from the right player and updates the game
+	# It also provide information about such as the board and player's turn
 	if inp_array[0].lower() == "move":
 		user_id = self.request.get('user_id')
 		move = inp_array[1]
 
 		if game_instance != None:
+			#game exists
 
 			if self.request.get('channel_id') == game_instance.channel and user_id != game_instance.x and user_id != game_instance.o:
 				text = "You aren't playing the game. Wait until the game ends" 
@@ -91,6 +112,7 @@ def handlers (inp_array, channel_id, self):
 				if move in valid_moves:
 					text = game_instance.makeMove(user_id, int(move))
 					if game_instance.isGameOver()[0]:
+						#game is over, need to empty the game_instance and the game
 						game_instance = None
 					print_slack (text, channel_id, self)
     			if move not in valid_moves:
@@ -98,29 +120,35 @@ def handlers (inp_array, channel_id, self):
     				print_slack (text, channel_id, self)		
 
 		else:
+			#game doesnt exist
 			text = "There isn't a game being played.\nTo start a game TYPE invite @mention"
 			print_slack (text, channel_id, self)
 
 
 
+	#If the input is BOARD it checks that there is game.
+	#If there is game it shows the board and the player whose turn is it
+	#if there isnt a game it provides with feeback information
 	if inp_array[0].lower() == "board":
 		if game_instance != None:
 			if self.request.get('channel_id') == game_instance.channel:
 				text = game_instance.getBoard()+"\nturn: " + game_instance.getTurnName (game_instance.turn)
 				print_slack (text, channel_id, self)
-		# if game_instance == None:
 		else:
 			text = "There isn't any game being played.\nTo start a game TYPE: invite @memtion"
 			print_slack(text, channel_id, self)
 
 
+	#If the input is END and if there is a game going on it ends the game if the user who sent this command 
+	#is currently playing the game
+	#Otherwise provides with feeback information
 	if inp_array[0].lower() == "end":
 
 		if game_instance == None:
 			text = "There isn't any game being played.\nTo start a game TYPE: invite @memtion"
 			print_slack (text, channel_id, self)
 
-		# if game_instance != None:
+		# if there is a game being played
 		else:
 			if self.request.get('channel_id') == game_instance.channel and (self.request.get('user_id') == game_instance.x or self.request.get('user_id') == game_instance.o):
 				game_instance = None
@@ -132,6 +160,8 @@ def handlers (inp_array, channel_id, self):
 				print_slack (text, channel_id, self)
 				return
 
+
+	#If the input is HELP, it provides with information about the game
 	if inp_array[0].lower() == "help":
 		text = "Invite a player by typing: INVITE @mention \n"
 		text += "Only current players can make moves or end the game\n"
@@ -142,6 +172,7 @@ def handlers (inp_array, channel_id, self):
 		print_slack(text, channel_id, self)
 
 
+	#If the input isnt a valid command, it outputs the valid command options
 	if inp_array[0].lower() not in valid_commands:
 		text = inp_array[0].lower() +" is not a valid command. Try typing "
 		for command in valid_commands:
@@ -152,7 +183,17 @@ def handlers (inp_array, channel_id, self):
 	return game_instance
 
 
+
 def get_user_id(mention, channel_id, self):
+	"""
+    Provides a user id given the channel and name provided or "invalid" if 
+    	mention didnt include @ or if the username doesnt exists in the channel 
+    Parameters: 
+    	mention = String (Input from the user)
+    	channel_id = Slack channel id from where the message came. 
+    Return type: 
+    	valid userid (String) or "invalid" (String)
+    """
 	if mention[0] == "@":
 		member = mention[1:]
 		member_id = ""
@@ -167,12 +208,32 @@ def get_user_id(mention, channel_id, self):
 	else:
 		return "invalid"
 
+
+
 def get_user_name(user_id, channel_id, self):
+	"""
+    Provides a username  given valid the user_id and channel 
+    Parameters: 
+    	user_id = String (valid user id)
+    	channel_id = Slack channel id from where the message came. 
+    	self = The self response object
+    Return type: 
+    	String valid username
+	"""
 	for user in slack.users.list().body['members']:
 			if user['id'] == user_id:
 				return user["name"]
 
+
 def print_slack (text, channel_id, self):
+	"""
+    Write text to a slack channel. 
+    This text is visible to all the members of a channel
+    Parameters: 
+    	text = String
+    	channel_id = Slack channel id where we weant to write
+    	self= Response object
+	"""
 	self.response.headers['Content-type'] = 'application/json'
 	my_json =  {'text': text, 'response_type': 'in_channel', 'channel': channel_id, 'command': '/ttt'}
 	my_json_dump = json.dumps(my_json)
