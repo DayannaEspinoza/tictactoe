@@ -5,10 +5,14 @@ import json
 import model
 
 
-slack_token = "PUT YOUR TOKEN HERE"
+import os
+
+
+slack_token =  os.environ["SLACKTOKEN"] 
 slack = Slacker(slack_token)
 
 game_instance = None
+
 
 
 
