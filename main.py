@@ -3,9 +3,10 @@ import random
 from slacker import Slacker
 import json
 import model
+import os
 
 
-slack_token = "PUT YOUR TOKEN HERE"
+slack_token =  os.environ["SLACKTOKEN"] 
 slack = Slacker(slack_token)
 
 game_instance = None
