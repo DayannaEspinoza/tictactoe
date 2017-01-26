@@ -3,8 +3,6 @@ import random
 from slacker import Slacker
 import json
 import model
-
-
 import os
 
 
